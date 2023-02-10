@@ -58,7 +58,7 @@ async function main() {
     // RECEIVER
 
     // Receiver set
-    const set_receiver = Int32Array.from([1, 2, 3, 4, 5])
+    const set_receiver = Int32Array.from([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27])
     const set_receiver_length = set_receiver.length
   
     // Encode receiver set
@@ -71,35 +71,36 @@ async function main() {
     // SENDER
     
     // Sender set
-    const set_sender = Int32Array.from([2, 3, 7])
-
-    // Generate random (non-zero) plaintexts
-    const randomPlaintext_sender = new Int32Array(set_receiver.length)
-    for (let i=0; i < set_receiver.length; i++) {
-      randomPlaintext_sender[i] = randomBytes(32).readUInt32BE();
-    }
-    const randomPlaintext_sender_encoded = encoder.encode(randomPlaintext_sender) as PlainText
-
-    const result_sender = seal.CipherText();
-    const firstValue = Int32Array.from(Array(set_receiver_length).fill(set_sender[0]))
-    const firstValue_encoded = encoder.encode(firstValue) as PlainText
-
-    evaluator.subPlain(setCiphertext_receiver, firstValue_encoded, result_sender);
-
-    for (let i=1; i < set_sender.length; i++) {
-      const iThValue = Int32Array.from(Array(set_receiver.length).fill(set_sender[i]))
-      const iThValue_encoded = encoder.encode(iThValue) as PlainText
-      const temp = seal.CipherText()
-      evaluator.subPlain(setCiphertext_receiver, iThValue_encoded, temp);
-      evaluator.multiply(result_sender, temp, result_sender);
-    }
+    const set_senders = [Int32Array.from([1, 3, 7]), Int32Array.from([9, 10, 11]), Int32Array.from([12, 13, 26]), Int32Array.from([14, 17, 22])]
+    set_senders.forEach(set_sender => {
+      // Generate random (non-zero) plaintexts
+      const randomPlaintext_sender = new Int32Array(set_receiver.length)
+      for (let i=0; i < set_receiver.length; i++) {
+        randomPlaintext_sender[i] = randomBytes(32).readUInt32BE();
+      }
+      const randomPlaintext_sender_encoded = encoder.encode(randomPlaintext_sender) as PlainText
+  
+      const result_sender = seal.CipherText();
+      const firstValue = Int32Array.from(Array(set_receiver_length).fill(set_sender[0]))
+      const firstValue_encoded = encoder.encode(firstValue) as PlainText
+  
+      evaluator.subPlain(setCiphertext_receiver, firstValue_encoded, result_sender);
+  
+      for (let i=1; i < set_sender.length; i++) {
+        const iThValue = Int32Array.from(Array(set_receiver.length).fill(set_sender[i]))
+        const iThValue_encoded = encoder.encode(iThValue) as PlainText
+        const temp = seal.CipherText()
+        evaluator.subPlain(setCiphertext_receiver, iThValue_encoded, temp);
+        evaluator.multiply(result_sender, temp, result_sender);
+      }
+      
+      evaluator.multiplyPlain(result_sender, randomPlaintext_sender_encoded, result_sender);
+  
+      const decrypted = decryptor.decrypt(result_sender) as PlainText
+      const decoded = encoder.decode(decrypted)
+      console.log(decoded)
+    })
     
-    evaluator.multiplyPlain(result_sender, randomPlaintext_sender_encoded, result_sender);
-
-    const decrypted = decryptor.decrypt(result_sender) as PlainText
-    const decoded = encoder.decode(decrypted)
-    console.log(decoded)
-
     return
 }
 
